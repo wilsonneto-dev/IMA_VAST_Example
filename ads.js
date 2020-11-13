@@ -3,6 +3,8 @@
 // Note that this example is provided "as is", WITHOUT WARRANTY
 // of any kind either expressed or implied.
 
+const NEXT_ADS_STARTS_IN = 2500;
+
 var adsManager;
 var adsLoader;
 var adDisplayContainer;
@@ -53,9 +55,12 @@ function setUpIMA() {
 
   // Request video ads.
   var adsRequest = new google.ima.AdsRequest();
-  adsRequest.adTagUrl =
-    "https://pubads.g.doubleclick.net/gampad/live/ads?iu=/22106339974/netmovies-tv-app&description_url=http%3A%2F%2Fwww.netmovies.com.br&tfcd=0&npa=0&sz=640x480&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator=";
-
+  // adsRequest.adTagUrl =
+  //   "https://pubads.g.doubleclick.net/gampad/live/ads?iu=/22106339974/netmovies-tv-app&description_url=http%3A%2F%2Fwww.netmovies.com.br&tfcd=0&npa=0&sz=640x480&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator=";
+  adsRequest.adTagUrl = 'https://pubads.g.doubleclick.net/gampad/ads?' +
+      'sz=640x480&iu=/124319096/external/single_ad_samples&ciu_szs=300x250&' +
+      'impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&' +
+    'cust_params=deployment%3Ddevsite%26sample_ct%3Dlinear&correlator=';
   // Specify the linear and nonlinear slot sizes. This helps the SDK to
   // select the correct creative if multiple are returned.
   adsRequest.linearAdSlotWidth = 640;
@@ -169,8 +174,32 @@ function onAdEvent(adEvent) {
       if (ad.isLinear()) {
         clearInterval(intervalTimer);
       }
+
+      reloadAds();
+
       break;
   }
+}
+
+
+function reloadAds() {
+  if (adsLoader) {
+    adsLoader.contentComplete();
+  }
+  
+  var adsRequest = new google.ima.AdsRequest();
+  adsRequest.adTagUrl = 'https://pubads.g.doubleclick.net/gampad/ads?' +
+      'sz=640x480&iu=/124319096/external/single_ad_samples&ciu_szs=300x250&' +
+      'impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&' +
+    'cust_params=deployment%3Ddevsite%26sample_ct%3Dlinear&correlator=';
+  
+  adsLoader.requestAds(adsRequest);
+  
+  setTimeout(() => {
+    console.log("Started Ads again...")
+    playAds();
+  }, NEXT_ADS_STARTS_IN);
+
 }
 
 function onAdError(adErrorEvent) {
@@ -181,7 +210,10 @@ function onAdError(adErrorEvent) {
 
   console.log(adErrorEvent);
   console.log(adErrorEvent.getError());
-  adsManager.destroy();
+
+  if(adsManager) {
+    adsManager.destroy();
+  }
 }
 
 function onContentPauseRequested() {
